@@ -4,21 +4,23 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { useAppStore } from './store/useAppStore';
 import { useAutoSave } from './hooks/useAutoSave';
 import { useGoogleDrive } from './hooks/useGoogleDrive';
-import { Header } from './components/layout/Header.tsx';
-import { Sidebar } from './components/layout/Sidebar.tsx';
-import { FloatingNav } from './components/layout/FloatingNav.tsx';
-import { LandingScreen } from './components/landing/LandingScreen.tsx';
-import { Toast } from './components/common/Toast.tsx';
-import { Modal } from './components/common/Modal.tsx';
-import { ResumenPage } from './components/resumen/ResumenPage.tsx';
-import { ActividadesPage } from './components/config/ActividadesPage.tsx';
-import { AttendancePage } from './components/attendance/AttendancePage.tsx';
-import { GradesPage } from './components/grades/GradesPage.tsx';
-import { TrackingPage } from './components/tracking/TrackingPage.tsx';
-import { ObservationsPage } from './components/tracking/ObservationsPage.tsx';
-import { CourseReportPage } from './components/reports/CourseReportPage.tsx';
-import { IndividualReportPage } from './components/reports/IndividualReportPage.tsx';
-import { CalendarPage } from './components/calendar/CalendarPage.tsx';
+
+// CORRECCIÓN: Se eliminaron las extensiones .tsx
+import { Header } from './components/layout/Header';
+import { Sidebar } from './components/layout/Sidebar';
+import { FloatingNav } from './components/layout/FloatingNav';
+import { LandingScreen } from './components/landing/LandingScreen';
+import { Toast } from './components/common/Toast';
+import { Modal } from './components/common/Modal';
+import { ResumenPage } from './components/resumen/ResumenPage';
+import { ActividadesPage } from './components/config/ActividadesPage';
+import { AttendancePage } from './components/attendance/AttendancePage';
+import { GradesPage } from './components/grades/GradesPage';
+import { TrackingPage } from './components/tracking/TrackingPage';
+import { ObservationsPage } from './components/tracking/ObservationsPage';
+import { CourseReportPage } from './components/reports/CourseReportPage';
+import { IndividualReportPage } from './components/reports/IndividualReportPage';
+import { CalendarPage } from './components/calendar/CalendarPage';
 
 function AppContent() {
   const currentSection = useAppStore(s => s.currentSection);
