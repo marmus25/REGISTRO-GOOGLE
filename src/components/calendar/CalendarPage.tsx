@@ -1,4 +1,3 @@
-// src/components/calendar/CalendarPage.tsx
 import { useState } from 'react';
 import { useAppStore } from '../../store/useAppStore';
 import { CALENDAR_TYPE_CONFIG, MONTHS_ES } from '../../utils/constants';
@@ -6,8 +5,6 @@ import type { CalendarEventType } from '../../types/index';
 
 export function CalendarPage() {
   const appData = useAppStore(s => s.appData);
-  const courseId = appData.currentCourse ?? '';
-  const course = appData.courses[courseId];
   const addCalendarEvent = useAppStore(s => s.addCalendarEvent);
   const deleteCalendarEvent = useAppStore(s => s.deleteCalendarEvent);
   const showToast = useAppStore(s => s.showToast);
@@ -16,18 +13,16 @@ export function CalendarPage() {
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth());
   const [showModal, setShowModal] = useState(false);
-  const [modalDate, setModalDate] = useState('');
   const [formTipo, setFormTipo] = useState<CalendarEventType>('examen');
   const [formFecha, setFormFecha] = useState(now.toISOString().split('T')[0]);
   const [formTitulo, setFormTitulo] = useState('');
   const [formCurso, setFormCurso] = useState('');
   const [formNotas, setFormNotas] = useState('');
 
+  // Lógica de filtrado robusta para evitar errores de zona horaria
   const eventos = appData.calendario ?? [];
-  const evMes = eventos.filter(ev => {
-    const d = new Date(ev.fecha + 'T12:00:00');
-    return d.getFullYear() === year && d.getMonth() === month;
-  });
+  const mesBusqueda = `${year}-${String(month + 1).padStart(2, '0')}`;
+  const evMes = eventos.filter(ev => ev.fecha.startsWith(mesBusqueda));
 
   const navMes = (dir: number) => {
     let m = month + dir;
@@ -45,13 +40,21 @@ export function CalendarPage() {
     setFormFecha(fecha ?? now.toISOString().split('T')[0]);
     setFormTitulo(''); setFormNotas(''); setFormCurso('');
     setFormTipo('examen');
-    setModalDate(fecha ?? '');
     setShowModal(true);
   };
 
   const handleSave = () => {
-    if (!formFecha || !formTitulo.trim()) { showToast('Completa fecha y titulo', 'err'); return; }
-    addCalendarEvent({ tipo: formTipo, fecha: formFecha, titulo: formTitulo.trim(), curso: formCurso, notas: formNotas.trim() });
+    if (!formFecha || !formTitulo.trim()) { 
+      showToast('Completa fecha y título', 'err'); 
+      return; 
+    }
+    addCalendarEvent({ 
+      tipo: formTipo, 
+      fecha: formFecha, 
+      titulo: formTitulo.trim(), 
+      curso: formCurso, 
+      notas: formNotas.trim() 
+    });
     setShowModal(false);
     showToast('Evento guardado', 'ok');
   };
@@ -63,21 +66,19 @@ export function CalendarPage() {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
         <div>
           <div style={{ fontFamily: 'var(--font-title)', fontSize: 24, fontWeight: 900, color: 'var(--text)' }}>
-            🗓 Calendario de Planificacion
+            🗓 Calendario de Planificación
           </div>
           <div style={{ fontSize: 13, color: 'var(--muted)' }}>{MONTHS_ES[month]} {year}</div>
         </div>
         <button className="btn btn-green btn-sm" onClick={() => openNew()}>+ Nuevo evento</button>
       </div>
 
-      {/* Nav mes */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
         <button className="btn btn-outline btn-sm" onClick={() => navMes(-1)}>◀ Anterior</button>
         <div style={{ fontWeight: 800, fontSize: 15 }}>{MONTHS_ES[month]} {year}</div>
         <button className="btn btn-outline btn-sm" onClick={() => navMes(1)}>Siguiente ▶</button>
       </div>
 
-      {/* Grid */}
       <div className="card" style={{ marginBottom: 20 }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 4, marginBottom: 8 }}>
           {dias.map(d => (
@@ -114,27 +115,19 @@ export function CalendarPage() {
             );
           })}
         </div>
-
-        {/* Leyenda */}
-        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginTop: 12, paddingTop: 10, borderTop: '1px solid var(--border)' }}>
-          {Object.entries(CALENDAR_TYPE_CONFIG).map(([k, v]) => (
-            <div key={k} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11 }}>
-              <div style={{ width: 10, height: 10, borderRadius: '50%', background: v.color }} />
-              {v.icon} {v.label}
-            </div>
-          ))}
-        </div>
       </div>
 
-      {/* Lista eventos */}
+      {/* Lista de eventos del mes */}
       <div style={{ fontWeight: 800, fontSize: 13, marginBottom: 10 }}>
         Eventos de {MONTHS_ES[month]} ({evMes.length})
       </div>
+      
       {evMes.length === 0 && (
         <div style={{ textAlign: 'center', color: 'var(--muted)', padding: 20, fontSize: 13 }}>
           Sin eventos este mes
         </div>
       )}
+
       {evMes.sort((a, b) => a.fecha.localeCompare(b.fecha)).map((ev, ei) => {
         const cfg = CALENDAR_TYPE_CONFIG[ev.tipo];
         const d = new Date(ev.fecha + 'T12:00:00');
@@ -154,61 +147,32 @@ export function CalendarPage() {
               {ev.notas && <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>{ev.notas}</div>}
             </div>
             <button
-              onClick={() => { if (window.confirm('Eliminar este evento?')) { deleteCalendarEvent(globalIdx); showToast('Evento eliminado', 'ok'); } }}
+              onClick={() => { if (window.confirm('¿Eliminar?')) { deleteCalendarEvent(globalIdx); showToast('Eliminado', 'ok'); } }}
               style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, opacity: .5 }}
             >🗑</button>
           </div>
         );
       })}
 
-      {/* Modal nuevo evento */}
       {showModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.6)', zIndex: 400, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.6)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
           onClick={() => setShowModal(false)}>
-          <div style={{ background: 'var(--card)', borderRadius: 16, padding: 20, width: 320, maxWidth: '95vw', boxShadow: '0 8px 40px rgba(0,0,0,.4)' }}
+          <div style={{ background: 'var(--card)', borderRadius: 16, padding: 20, width: 320, maxWidth: '95vw' }}
             onClick={e => e.stopPropagation()}>
             <div style={{ fontWeight: 800, fontSize: 15, marginBottom: 16 }}>📅 Nuevo evento</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <div>
-                <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted)' }}>TIPO</label>
-                <select value={formTipo} onChange={e => setFormTipo(e.target.value as CalendarEventType)}
-                  style={{ width: '100%', padding: 8, borderRadius: 8, border: '2px solid var(--border)', background: 'var(--card2)', color: 'var(--text)', fontSize: 13, marginTop: 4 }}>
-                  {Object.entries(CALENDAR_TYPE_CONFIG).map(([k, v]) => (
-                    <option key={k} value={k}>{v.icon} {v.label}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted)' }}>FECHA</label>
-                <input type="date" value={formFecha} onChange={e => setFormFecha(e.target.value)}
-                  style={{ width: '100%', padding: 8, borderRadius: 8, border: '2px solid var(--border)', background: 'var(--card2)', color: 'var(--text)', fontSize: 13, marginTop: 4, boxSizing: 'border-box' }} />
-              </div>
-              <div>
-                <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted)' }}>TITULO</label>
-                <input type="text" value={formTitulo} onChange={e => setFormTitulo(e.target.value)}
-                  placeholder="Ej: Examen parcial SER"
-                  style={{ width: '100%', padding: 8, borderRadius: 8, border: '2px solid var(--border)', background: 'var(--card2)', color: 'var(--text)', fontSize: 13, marginTop: 4, boxSizing: 'border-box' }} />
-              </div>
-              <div>
-                <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted)' }}>CURSO (opcional)</label>
-                <select value={formCurso} onChange={e => setFormCurso(e.target.value)}
-                  style={{ width: '100%', padding: 8, borderRadius: 8, border: '2px solid var(--border)', background: 'var(--card2)', color: 'var(--text)', fontSize: 13, marginTop: 4 }}>
-                  <option value="">Todos los cursos</option>
-                  {Object.values(appData.courses).map(c => (
-                    <option key={c.meta.courseId} value={c.meta.curso}>{c.meta.curso}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted)' }}>NOTAS (opcional)</label>
-                <input type="text" value={formNotas} onChange={e => setFormNotas(e.target.value)}
-                  placeholder="Detalle adicional..."
-                  style={{ width: '100%', padding: 8, borderRadius: 8, border: '2px solid var(--border)', background: 'var(--card2)', color: 'var(--text)', fontSize: 13, marginTop: 4, boxSizing: 'border-box' }} />
-              </div>
+              <input type="date" value={formFecha} onChange={e => setFormFecha(e.target.value)} className="input-field" />
+              <input type="text" value={formTitulo} onChange={e => setFormTitulo(e.target.value)} placeholder="Título" className="input-field" />
+              <select value={formTipo} onChange={e => setFormTipo(e.target.value as CalendarEventType)} className="input-field">
+                {Object.entries(CALENDAR_TYPE_CONFIG).map(([k, v]) => (
+                  <option key={k} value={k}>{v.icon} {v.label}</option>
+                ))}
+              </select>
+              <textarea value={formNotas} onChange={e => setFormNotas(e.target.value)} placeholder="Notas" className="input-field" />
             </div>
             <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
-              <button className="btn btn-green" style={{ flex: 1, justifyContent: 'center' }} onClick={handleSave}>✅ Guardar</button>
-              <button className="btn btn-outline" style={{ flex: 1, justifyContent: 'center' }} onClick={() => setShowModal(false)}>Cancelar</button>
+              <button className="btn btn-green" style={{ flex: 1 }} onClick={handleSave}>Guardar</button>
+              <button className="btn btn-outline" style={{ flex: 1 }} onClick={() => setShowModal(false)}>Cancelar</button>
             </div>
           </div>
         </div>

@@ -17,49 +17,93 @@ export function IndividualReportPage() {
   const trims = [1, 2, 3] as TrimesterNumber[];
   const selected = selectedIdx !== null ? course.students[selectedIdx] : null;
 
-  const trimSection = (t: TrimesterNumber) => {
-    if (selectedIdx === null) return null;
-    const pS = calcProm(course, t, selectedIdx, 'ser');
-    const pSb = calcProm(course, t, selectedIdx, 'saber');
-    const pH = calcProm(course, t, selectedIdx, 'hacer');
-    const tot = calcTotal(course, t, selectedIdx);
-    const p = countAtt(course, t, selectedIdx, 'P');
-    const f = countAtt(course, t, selectedIdx, 'F');
-    const l = countAtt(course, t, selectedIdx, 'L');
-    const r = countAtt(course, t, selectedIdx, 'R');
-    const obs = (course.observations[t] ?? {})[selectedIdx] ?? '';
+  const printIndividual = () => {
+    if (selectedIdx === null || !selected) return;
+    const hoy = new Date().toLocaleDateString('es-BO', { day: '2-digit', month: 'long', year: 'numeric' });
+    const colors = ['#2563eb','#7c3aed','#16a34a','#dc2626','#ea580c','#0891b2'];
+    const color = colors[selectedIdx % colors.length];
+    const initials = selected.nombre.split(' ').slice(0,2).map((w: string) => w[0]).join('');
 
-    return (
-      <div key={t} className="card" style={{ marginBottom: 12 }}>
-        <div style={{ fontWeight: 800, fontSize: 14, marginBottom: 12, color: 'var(--gold-bright)' }}>
-          {TRIM_LABELS[t]}° Trimestre
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(120px,1fr))', gap: 10, marginBottom: 12 }}>
-          {[
-            { label: 'SER', val: pS, max: 10, color: 'var(--ser-c)' },
-            { label: 'SABER', val: pSb, max: 45, color: 'var(--saber-c)' },
-            { label: 'HACER', val: pH, max: 40, color: 'var(--hacer-c)' },
-            { label: 'TOTAL', val: tot, max: 100, color: 'var(--gold-bright)' },
-          ].map(item => (
-            <div key={item.label} style={{ background: 'var(--card2)', borderRadius: 10, padding: '10px 12px', textAlign: 'center' }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: item.color, marginBottom: 4 }}>{item.label}</div>
-              <ScoreBadge value={item.val} max={item.max} />
-            </div>
-          ))}
-        </div>
-        <div style={{ display: 'flex', gap: 16, fontSize: 12, color: 'var(--muted)', marginBottom: obs ? 10 : 0 }}>
-          <span>✅ Presencias: <strong style={{ color: 'var(--success-bright)' }}>{p}</strong></span>
-          <span>❌ Faltas: <strong style={{ color: f > 3 ? 'var(--danger-bright)' : 'var(--text)' }}>{f}</strong></span>
-          <span>📋 Licencias: <strong>{l}</strong></span>
-          <span>⏰ Retrasos: <strong>{r}</strong></span>
-        </div>
-        {obs && (
-          <div style={{ marginTop: 10, padding: '8px 12px', background: 'var(--ser-bg)', borderLeft: '3px solid var(--ser-c)', borderRadius: 6, fontSize: 12, color: 'var(--text)', fontStyle: 'italic' }}>
-            {obs}
+    const trimHTML = trims.map(t => {
+      const pS = calcProm(course, t, selectedIdx, 'ser');
+      const pSb = calcProm(course, t, selectedIdx, 'saber');
+      const pH = calcProm(course, t, selectedIdx, 'hacer');
+      const tot = calcTotal(course, t, selectedIdx);
+      const p = countAtt(course, t, selectedIdx, 'P');
+      const f = countAtt(course, t, selectedIdx, 'F');
+      const l = countAtt(course, t, selectedIdx, 'L');
+      const r = countAtt(course, t, selectedIdx, 'R');
+      const obs = (course.observations[t] ?? {})[selectedIdx] ?? '';
+      const totColor = tot === null ? '#999' : tot >= 51 ? '#16a34a' : tot >= 36 ? '#ca8a04' : '#dc2626';
+      const badge = (val: number | null, max: number) => {
+        if (val === null) return '<span style="color:#999">—</span>';
+        const pct = val / max;
+        const bg = pct >= 0.51 ? '#16a34a' : pct >= 0.36 ? '#ca8a04' : '#dc2626';
+        return `<span style="background:${bg};color:#fff;padding:2px 8px;border-radius:10px;font-weight:700">${Math.round(val)}</span>`;
+      };
+      return `
+        <div style="flex:1;border:1px solid #e5e7eb;border-radius:8px;padding:10px;min-width:0">
+          <div style="font-weight:800;font-size:10pt;color:#374151;text-align:center;border-bottom:2px solid #e5e7eb;padding-bottom:5px;margin-bottom:8px">
+            ${TRIM_LABELS[t]}° TRIMESTRE
           </div>
-        )}
+          <table style="width:100%;font-size:9pt;border-collapse:collapse">
+            <tr><td style="color:#2563eb;font-weight:700;padding:3px 0">SER</td><td style="text-align:right">${badge(pS,10)} <span style="color:#999;font-size:8pt">/10</span></td></tr>
+            <tr><td style="color:#7c3aed;font-weight:700;padding:3px 0">SABER</td><td style="text-align:right">${badge(pSb,45)} <span style="color:#999;font-size:8pt">/45</span></td></tr>
+            <tr><td style="color:#16a34a;font-weight:700;padding:3px 0">HACER</td><td style="text-align:right">${badge(pH,40)} <span style="color:#999;font-size:8pt">/40</span></td></tr>
+            <tr style="border-top:2px solid #e5e7eb">
+              <td style="font-weight:800;padding:4px 0;font-size:10pt">TOTAL</td>
+              <td style="text-align:right"><span style="background:${totColor};color:#fff;padding:3px 10px;border-radius:10px;font-weight:800">${tot !== null ? Math.round(tot) : '—'}</span> <span style="color:#999;font-size:8pt">/100</span></td>
+            </tr>
+          </table>
+          <div style="margin-top:6px;font-size:8pt;color:#6b7280">
+            ✅ P:${p} &nbsp; ❌ F:<span style="color:${f>3?'#dc2626':'inherit'}">${f}</span> &nbsp; 📋 L:${l} &nbsp; ⏰ R:${r}
+          </div>
+          ${obs ? `<div style="margin-top:5px;padding:5px;background:#f0f9ff;border-left:3px solid #2563eb;border-radius:4px;font-size:8pt;color:#1e3a5f;font-style:italic">${obs}</div>` : ''}
+        </div>`;
+    }).join('');
+
+    const seg = (course.seguimiento ?? []).filter(o => o.idx === selectedIdx).sort((a,b) => b.ts - a.ts);
+    const segHTML = seg.length ? `
+      <div style="margin-top:10px;padding:8px;background:#fafafa;border:1px solid #e5e7eb;border-radius:6px">
+        <div style="font-size:9pt;font-weight:700;color:#374151;margin-bottom:6px">✍️ Seguimiento (${seg.length})</div>
+        ${seg.map(o => `<div style="font-size:8pt;padding:2px 0;color:${o.tipo==='pos'?'#16a34a':'#dc2626'}">${o.tipo==='pos'?'✅':'⚠️'} ${o.texto} <span style="color:#9ca3af">(${new Date(o.ts).toLocaleDateString('es-BO')})</span></div>`).join('')}
+      </div>` : '';
+
+    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8">
+    <title>Informe — ${selected.nombre}</title>
+    <style>
+      *{box-sizing:border-box;margin:0;padding:0}
+      body{font-family:'Segoe UI',Arial,sans-serif;color:#111;background:#fff;font-size:10pt;padding:20px}
+      @media print{body{padding:12px}}
+    </style></head><body>
+    <div style="border-bottom:3px solid #217346;padding-bottom:10px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between">
+      <div>
+        <div style="font-size:13pt;font-weight:800;color:#217346">U.E. MARISTA "NUESTRA SEÑORA DEL PILAR"</div>
+        <div style="font-size:9pt;color:#666">Fe y Alegria — Nivel Secundario · Cochabamba - Bolivia</div>
+        <div style="font-size:9pt;color:#666">${course.meta.area} · Gestion 2026</div>
       </div>
-    );
+      <div style="text-align:right;font-size:9pt;color:#666">${hoy}</div>
+    </div>
+    <div style="background:linear-gradient(135deg,#217346,#155228);color:#fff;border-radius:10px;padding:12px 16px;margin-bottom:14px;display:flex;align-items:center;gap:14px">
+      <div style="width:48px;height:48px;border-radius:50%;background:${color};display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;flex-shrink:0">${initials}</div>
+      <div style="flex:1">
+        <div style="font-size:14pt;font-weight:800">${selected.nombre}</div>
+        <div style="font-size:9pt;opacity:.85">N° ${selected.nro} · ${selected.sexo==='F'?'Femenino':'Masculino'} · ${course.meta.curso} · Docente: ${course.meta.docente}</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:10px">${trimHTML}</div>
+    ${segHTML}
+    <div style="margin-top:14px;border-top:1px dashed #ccc;padding-top:8px;display:flex;justify-content:flex-end">
+      <div style="font-size:8pt;color:#6b7280">Firma del Docente: ____________________</div>
+    </div>
+    </body></html>`;
+
+    const win = window.open('', '_blank', 'width=900,height=700');
+    if (win) {
+      win.document.write(html);
+      win.document.close();
+      win.onload = () => { win.focus(); setTimeout(() => win.print(), 300); };
+    }
   };
 
   return (
@@ -73,13 +117,10 @@ export function IndividualReportPage() {
         </div>
         <button
           className="btn btn-outline btn-sm"
-          onClick={() => {
-            if (selectedIdx === null) return;
-            window.print();
-          }}
+          onClick={printIndividual}
           style={{ opacity: selectedIdx === null ? .4 : 1 }}
         >
-          🖨️ Imprimir
+          🖨️ Imprimir ficha
         </button>
       </div>
 
@@ -102,7 +143,6 @@ export function IndividualReportPage() {
 
       {selected && selectedIdx !== null && (
         <div>
-          {/* Header alumno */}
           <div className="card" style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 16 }}>
             <div style={{
               width: 56, height: 56, borderRadius: '50%',
@@ -110,7 +150,7 @@ export function IndividualReportPage() {
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: 20, fontWeight: 800, color: '#1a1610', flexShrink: 0,
             }}>
-              {selected.nombre.split(' ').slice(0,2).map(w => w[0]).join('')}
+              {selected.nombre.split(' ').slice(0,2).map((w: string) => w[0]).join('')}
             </div>
             <div>
               <div style={{ fontFamily: 'var(--font-title)', fontSize: 20, fontWeight: 900, color: 'var(--text)' }}>
@@ -122,10 +162,46 @@ export function IndividualReportPage() {
             </div>
           </div>
 
-          {/* Trimestres */}
-          {trims.map(t => trimSection(t))}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12, marginBottom: 12 }}>
+            {trims.map(t => {
+              const pS = calcProm(course, t, selectedIdx, 'ser');
+              const pSb = calcProm(course, t, selectedIdx, 'saber');
+              const pH = calcProm(course, t, selectedIdx, 'hacer');
+              const tot = calcTotal(course, t, selectedIdx);
+              const p = countAtt(course, t, selectedIdx, 'P');
+              const f = countAtt(course, t, selectedIdx, 'F');
+              const l = countAtt(course, t, selectedIdx, 'L');
+              const r = countAtt(course, t, selectedIdx, 'R');
+              const obs = (course.observations[t] ?? {})[selectedIdx] ?? '';
+              return (
+                <div key={t} className="card">
+                  <div style={{ fontWeight: 800, fontSize: 14, marginBottom: 12, color: 'var(--gold-bright)' }}>
+                    {TRIM_LABELS[t]}° Trimestre
+                  </div>
+                  {[
+                    { label: 'SER', val: pS, max: 10, color: 'var(--ser-c)' },
+                    { label: 'SABER', val: pSb, max: 45, color: 'var(--saber-c)' },
+                    { label: 'HACER', val: pH, max: 40, color: 'var(--hacer-c)' },
+                    { label: 'TOTAL', val: tot, max: 100, color: 'var(--gold-bright)' },
+                  ].map(item => (
+                    <div key={item.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                      <span style={{ fontSize: 12, fontWeight: 700, color: item.color }}>{item.label}</span>
+                      <ScoreBadge value={item.val} max={item.max} />
+                    </div>
+                  ))}
+                  <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 8 }}>
+                    ✅ {p} · ❌ <span style={{ color: f > 3 ? 'var(--danger-bright)' : 'var(--muted)' }}>{f}</span> · 📋 {l} · ⏰ {r}
+                  </div>
+                  {obs && (
+                    <div style={{ marginTop: 8, padding: '6px 8px', background: 'var(--ser-bg)', borderLeft: '3px solid var(--ser-c)', borderRadius: 4, fontSize: 11, fontStyle: 'italic' }}>
+                      {obs}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
 
-          {/* Seguimiento */}
           {(() => {
             const seg = (course.seguimiento ?? []).filter(o => o.idx === selectedIdx).sort((a,b) => b.ts - a.ts).slice(0, 10);
             if (!seg.length) return null;
