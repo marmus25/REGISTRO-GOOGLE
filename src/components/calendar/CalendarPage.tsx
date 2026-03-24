@@ -36,7 +36,6 @@ export function CalendarPage() {
     setMonth(m); setYear(y);
   };
 
-  // Primer día de la semana (lunes = 0)
   const firstDay = new Date(year, month, 1).getDay();
   const offset = firstDay === 0 ? 6 : firstDay - 1;
   const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -60,7 +59,6 @@ export function CalendarPage() {
     showToast('Evento guardado', 'ok');
   };
 
-  // Semanas del mes
   const totalCells = offset + daysInMonth;
   const weeks = Math.ceil(totalCells / 7);
 
@@ -103,12 +101,10 @@ export function CalendarPage() {
 
       {/* Grid calendario */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 2 }}>
-        {/* Celdas vacías antes del primer día */}
         {Array.from({ length: offset }).map((_, i) => (
           <div key={`e-${i}`} style={{ minHeight: 80, background: 'var(--card2)', opacity: .3, borderRadius: 6 }} />
         ))}
 
-        {/* Días del mes */}
         {Array.from({ length: daysInMonth }).map((_, i) => {
           const d = i + 1;
           const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
@@ -145,14 +141,33 @@ export function CalendarPage() {
                       key={ei}
                       onClick={e => { e.stopPropagation(); if (window.confirm(`Eliminar: ${ev.titulo}?`)) { deleteCalendarEvent(globalIdx); showToast('Eliminado', 'ok'); } }}
                       style={{
-                        background: c, color: '#fff', borderRadius: 3,
-                        padding: '1px 5px', fontSize: 10, fontWeight: 700,
-                        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                        background: c + '22',
+                        border: `1px solid ${c}`,
+                        borderRadius: 3,
+                        padding: '2px 5px',
                         cursor: 'pointer',
                       }}
                       title={`${ev.titulo}${ev.curso ? ' · ' + ev.curso : ''}`}
                     >
-                      {ev.titulo}
+                      {/* Título */}
+                      <div style={{
+                        fontSize: 10, fontWeight: 700,
+                        color: '#fff',
+                        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                      }}>
+                        {ev.titulo}
+                      </div>
+                      {/* Curso — solo si existe */}
+                      {ev.curso && (
+                        <div style={{
+                          fontSize: 9, fontWeight: 600,
+                          color: c,
+                          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                          opacity: 0.9,
+                        }}>
+                          {ev.curso}
+                        </div>
+                      )}
                     </div>
                   );
                 })}
@@ -164,7 +179,6 @@ export function CalendarPage() {
           );
         })}
 
-        {/* Celdas vacías al final */}
         {Array.from({ length: weeks * 7 - totalCells }).map((_, i) => (
           <div key={`f-${i}`} style={{ minHeight: 80, background: 'var(--card2)', opacity: .3, borderRadius: 6 }} />
         ))}
