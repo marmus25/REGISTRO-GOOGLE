@@ -45,7 +45,7 @@ export function GradeInputPopup({ trim, dim, actIdx, actLabel, max, initialStude
     setTimeout(() => { inputRef.current?.focus(); inputRef.current?.select(); }, 30);
   }, [currentPos]);
 
-  const saveAndNext = () => {
+  const saveCurrentGrade = () => {
     if (!currentStudent || studentIdx < 0) return;
     const n = inputVal === '' ? null : Math.min(max, Math.max(0, parseInt(inputVal)));
     if (dim === 'auto') setAuto(courseId, trim, studentIdx, n);
@@ -59,7 +59,11 @@ export function GradeInputPopup({ trim, dim, actIdx, actLabel, max, initialStude
         ts: Date.now(),
       });
     }
+  };
 
+  // Aceptar: guarda y avanza al siguiente, o cierra si es el último
+  const saveAndNext = () => {
+    saveCurrentGrade();
     if (currentPos < students.length - 1) {
       setCurrentPos(p => p + 1);
     } else {
@@ -67,32 +71,36 @@ export function GradeInputPopup({ trim, dim, actIdx, actLabel, max, initialStude
     }
   };
 
+  // ◄ Anterior: guarda y retrocede
   const handlePrev = () => {
+    saveCurrentGrade();
     if (currentPos > 0) setCurrentPos(p => p - 1);
   };
 
+  // ► Siguiente: guarda y avanza, o cierra si es el último
   const handleNext = () => {
+    saveCurrentGrade();
     if (currentPos < students.length - 1) setCurrentPos(p => p + 1);
     else onClose();
   };
 
+  // El hook maneja Enter, PageUp, PageDown — NO duplicar onKeyDown en el input
   useMapPopupKeyNav(handlePrev, handleNext, saveAndNext, true);
 
   const handleConfigKeys = () => {
-    openModal(
-      <KeyConfigModal onClose={closeModal} />
-    );
+    openModal(<KeyConfigModal onClose={closeModal} />);
   };
 
   if (!currentStudent) return null;
 
   return (
-    <div style={{
-      position: 'fixed', inset: 0,
-      background: 'rgba(0,0,0,.5)',
-      zIndex: 300, display: 'flex',
-      alignItems: 'center', justifyContent: 'center',
-    }}
+    <div
+      style={{
+        position: 'fixed', inset: 0,
+        background: 'rgba(0,0,0,.5)',
+        zIndex: 300, display: 'flex',
+        alignItems: 'center', justifyContent: 'center',
+      }}
       onClick={onClose}
     >
       <div
@@ -135,7 +143,7 @@ export function GradeInputPopup({ trim, dim, actIdx, actLabel, max, initialStude
           >►</button>
         </div>
 
-        {/* Input */}
+        {/* Input — sin onKeyDown, el hook maneja Enter */}
         <input
           ref={inputRef}
           type="number"
@@ -143,7 +151,6 @@ export function GradeInputPopup({ trim, dim, actIdx, actLabel, max, initialStude
           max={max}
           value={inputVal}
           onChange={e => setInputVal(e.target.value)}
-          onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); saveAndNext(); } }}
           style={{
             width: '100%', height: 64, fontSize: 28, fontWeight: 800,
             textAlign: 'center', border: '2px solid var(--border)',
