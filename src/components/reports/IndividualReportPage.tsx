@@ -5,6 +5,7 @@ import { calcTotal, calcProm, countAtt } from '../../utils/calculations';
 import { TRIM_LABELS } from '../../utils/constants';
 import { ScoreBadge } from '../common/Badge';
 import type { TrimesterNumber } from '../../types/index';
+import { LOGO_BASE64 } from '../../utils/logoBase64';
 
 export function IndividualReportPage() {
   const appData = useAppStore(s => s.appData);
@@ -24,6 +25,13 @@ export function IndividualReportPage() {
     const color = colors[selectedIdx % colors.length];
     const initials = selected.nombre.split(' ').slice(0,2).map((w: string) => w[0]).join('');
 
+    const badge = (val: number | null, max: number) => {
+      if (val === null) return '<span style="color:#999">—</span>';
+      const pct = val / max;
+      const bg = pct >= 0.51 ? '#16a34a' : pct >= 0.36 ? '#ca8a04' : '#dc2626';
+      return `<span style="background:${bg};color:#fff;padding:2px 8px;border-radius:10px;font-weight:700">${Math.round(val)}</span>`;
+    };
+
     const trimHTML = trims.map(t => {
       const pS = calcProm(course, t, selectedIdx, 'ser');
       const pSb = calcProm(course, t, selectedIdx, 'saber');
@@ -35,12 +43,6 @@ export function IndividualReportPage() {
       const r = countAtt(course, t, selectedIdx, 'R');
       const obs = (course.observations[t] ?? {})[selectedIdx] ?? '';
       const totColor = tot === null ? '#999' : tot >= 51 ? '#16a34a' : tot >= 36 ? '#ca8a04' : '#dc2626';
-      const badge = (val: number | null, max: number) => {
-        if (val === null) return '<span style="color:#999">—</span>';
-        const pct = val / max;
-        const bg = pct >= 0.51 ? '#16a34a' : pct >= 0.36 ? '#ca8a04' : '#dc2626';
-        return `<span style="background:${bg};color:#fff;padding:2px 8px;border-radius:10px;font-weight:700">${Math.round(val)}</span>`;
-      };
       return `
         <div style="flex:1;border:1px solid #e5e7eb;border-radius:8px;padding:10px;min-width:0">
           <div style="font-weight:800;font-size:10pt;color:#374151;text-align:center;border-bottom:2px solid #e5e7eb;padding-bottom:5px;margin-bottom:8px">
@@ -58,13 +60,13 @@ export function IndividualReportPage() {
           <div style="margin-top:6px;font-size:8pt;color:#6b7280">
             ✅ P:${p} &nbsp; ❌ F:<span style="color:${f>3?'#dc2626':'inherit'}">${f}</span> &nbsp; 📋 L:${l} &nbsp; ⏰ R:${r}
           </div>
-          ${obs ? `<div style="margin-top:5px;padding:5px;background:#f0f9ff;border-left:3px solid #2563eb;border-radius:4px;font-size:8pt;color:#1e3a5f;font-style:italic">${obs}</div>` : ''}
+          ${obs ? `<div style="margin-top:5px;padding:5px;background:#eff6ff;border-left:3px solid #2563eb;border-radius:4px;font-size:8pt;color:#1e3a5f;font-style:italic">${obs}</div>` : ''}
         </div>`;
     }).join('');
 
     const seg = (course.seguimiento ?? []).filter(o => o.idx === selectedIdx).sort((a,b) => b.ts - a.ts);
     const segHTML = seg.length ? `
-      <div style="margin-top:10px;padding:8px;background:#fafafa;border:1px solid #e5e7eb;border-radius:6px">
+      <div style="margin-top:10px;padding:8px;background:#f8fafc;border:1px solid #e5e7eb;border-radius:6px">
         <div style="font-size:9pt;font-weight:700;color:#374151;margin-bottom:6px">✍️ Seguimiento (${seg.length})</div>
         ${seg.map(o => `<div style="font-size:8pt;padding:2px 0;color:${o.tipo==='pos'?'#16a34a':'#dc2626'}">${o.tipo==='pos'?'✅':'⚠️'} ${o.texto} <span style="color:#9ca3af">(${new Date(o.ts).toLocaleDateString('es-BO')})</span></div>`).join('')}
       </div>` : '';
@@ -76,15 +78,18 @@ export function IndividualReportPage() {
       body{font-family:'Segoe UI',Arial,sans-serif;color:#111;background:#fff;font-size:10pt;padding:20px}
       @media print{body{padding:12px}}
     </style></head><body>
-    <div style="border-bottom:3px solid #217346;padding-bottom:10px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between">
-      <div>
-        <div style="font-size:13pt;font-weight:800;color:#217346">U.E. MARISTA "NUESTRA SEÑORA DEL PILAR"</div>
-        <div style="font-size:9pt;color:#666">Fe y Alegria — Nivel Secundario · Cochabamba - Bolivia</div>
-        <div style="font-size:9pt;color:#666">${course.meta.area} · Gestion 2026</div>
+    <div style="border-bottom:3px solid #1e40af;padding-bottom:10px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between">
+      <div style="display:flex;align-items:center;gap:12px">
+        <img src="${LOGO_BASE64}" style="width:48px;height:48px;object-fit:contain" />
+        <div>
+          <div style="font-size:13pt;font-weight:800;color:#1e40af">U.E. MARISTA "NUESTRA SEÑORA DEL PILAR"</div>
+          <div style="font-size:9pt;color:#666">Fe y Alegria — Nivel Secundario · Cochabamba - Bolivia</div>
+          <div style="font-size:9pt;color:#666">${course.meta.area} · Gestion 2026</div>
+        </div>
       </div>
       <div style="text-align:right;font-size:9pt;color:#666">${hoy}</div>
     </div>
-    <div style="background:linear-gradient(135deg,#217346,#155228);color:#fff;border-radius:10px;padding:12px 16px;margin-bottom:14px;display:flex;align-items:center;gap:14px">
+    <div style="background:linear-gradient(135deg,#1e40af,#1e3a8a);color:#fff;border-radius:10px;padding:12px 16px;margin-bottom:14px;display:flex;align-items:center;gap:14px">
       <div style="width:48px;height:48px;border-radius:50%;background:${color};display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;flex-shrink:0">${initials}</div>
       <div style="flex:1">
         <div style="font-size:14pt;font-weight:800">${selected.nombre}</div>
@@ -146,9 +151,9 @@ export function IndividualReportPage() {
           <div className="card" style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 16 }}>
             <div style={{
               width: 56, height: 56, borderRadius: '50%',
-              background: 'linear-gradient(135deg,var(--gold),var(--amber))',
+              background: 'linear-gradient(135deg,#1e40af,#1e3a8a)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 20, fontWeight: 800, color: '#1a1610', flexShrink: 0,
+              fontSize: 20, fontWeight: 800, color: '#fff', flexShrink: 0,
             }}>
               {selected.nombre.split(' ').slice(0,2).map((w: string) => w[0]).join('')}
             </div>
