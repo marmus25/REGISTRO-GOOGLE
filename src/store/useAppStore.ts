@@ -70,7 +70,7 @@ interface AppStore {
   markChanged: () => void;
   saveToLocalStorage: () => void;
   loadFromLocalStorage: () => boolean;
-  exportJSON: () => void;
+  exportJSON: () => Promise<void>;
   importJSON: (file: File) => Promise<void>;
   resetApp: () => void;
   exportXLSX: (courseId: string, trim: TrimesterNumber | 'todos') => void;
@@ -498,7 +498,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     } catch { return false; }
   },
 
-  exportJSON: () => {
+  exportJSON: async () => {
     interface ExportAppData extends AppData {
       exportedAt?: string;
       courses: Record<string, CourseData & {
@@ -519,10 +519,26 @@ export const useAppStore = create<AppStore>((set, get) => ({
       });
     });
     exp.exportedAt = new Date().toISOString();
-    const blob = new Blob([JSON.stringify(exp, null, 2)], { type: 'application/json' });
+    const jsonStr = JSON.stringify(exp, null, 2);
+    const blob = new Blob([jsonStr], { type: 'application/json' });
+    const fileName = `registro_musical_${new Date().toISOString().split('T')[0]}.json`;
+
+    // Android WebView / móvil: usar navigator.share
+    if (navigator.share && navigator.canShare) {
+      try {
+        const file = new File([blob], fileName, { type: 'application/json' });
+        if (navigator.canShare({ files: [file] })) {
+          await navigator.share({ files: [file], title: 'Registro Musical 2026' });
+          get().showToast('JSON compartido', 'ok');
+          return;
+        }
+      } catch { /* fallback al método tradicional */ }
+    }
+
+    // Fallback: método tradicional (desktop)
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = url; a.download = 'datos_todos_cursos.json'; a.click();
+    a.href = url; a.download = fileName; a.click();
     URL.revokeObjectURL(url);
     get().showToast('JSON exportado', 'ok');
   },
