@@ -91,6 +91,34 @@ const emptyAppData = (): AppData => ({
 
 const emptyGrade = (): GradeEntry => ({ ser: [], saber: [], hacer: [], auto: null });
 
+const TRIMS: TrimesterNumber[] = [1, 2, 3];
+
+function normalizeCourse(course: CourseData): CourseData {
+  const defActs = (n: number) => Array.from({ length: n }, (_, i) => `Act.${i + 1}`);
+
+  if (!course.attendance || typeof course.attendance !== 'object') course.attendance = { 1: {}, 2: {}, 3: {} };
+  TRIMS.forEach(t => { if (!course.attendance[t]) course.attendance[t] = {}; });
+
+  if (!course.grades || typeof course.grades !== 'object') course.grades = { 1: {}, 2: {}, 3: {} } as CourseData['grades'];
+  TRIMS.forEach(t => { if (!course.grades[t]) course.grades[t] = {}; });
+
+  if (!course.activities || typeof course.activities !== 'object') course.activities = { 1: { ser: defActs(3), saber: defActs(8), hacer: defActs(8) }, 2: { ser: defActs(3), saber: defActs(8), hacer: defActs(8) }, 3: { ser: defActs(3), saber: defActs(8), hacer: defActs(8) } };
+  TRIMS.forEach(t => {
+    if (!course.activities[t]) course.activities[t] = { ser: defActs(3), saber: defActs(8), hacer: defActs(8) };
+    if (!course.activities[t].ser) course.activities[t].ser = defActs(3);
+    if (!course.activities[t].saber) course.activities[t].saber = defActs(8);
+    if (!course.activities[t].hacer) course.activities[t].hacer = defActs(8);
+  });
+
+  if (!course.observations || typeof course.observations !== 'object') course.observations = { 1: {}, 2: {}, 3: {} };
+  TRIMS.forEach(t => { if (!course.observations[t]) course.observations[t] = {}; });
+
+  if (!Array.isArray(course.seguimiento)) course.seguimiento = [];
+  if (!Array.isArray(course.students)) course.students = [];
+
+  return course;
+}
+
 export const useAppStore = create<AppStore>((set, get) => ({
   appData: emptyAppData(),
   currentSection: 'resumen',
@@ -493,6 +521,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       if (!d.currentCourse) d.currentCourse = Object.keys(d.courses)[0];
       if (!d.textosRapidos) d.textosRapidos = { pos: [...DEFAULT_POS_TEXTS], neg: [...DEFAULT_NEG_TEXTS] };
       if (!d.calendario) d.calendario = [];
+      Object.keys(d.courses).forEach(id => { d.courses[id] = normalizeCourse(d.courses[id]); });
       set({ appData: d });
       return true;
     } catch { return false; }
@@ -535,6 +564,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
           const d: AppData = JSON.parse(e.target?.result as string);
           if (!d.courses) { get().showToast('JSON invalido', 'err'); reject(new Error('invalid')); return; }
           if (!d.currentCourse) d.currentCourse = Object.keys(d.courses)[0];
+          Object.keys(d.courses).forEach(id => { d.courses[id] = normalizeCourse(d.courses[id]); });
           set({ appData: d });
           get().markChanged();
           get().showToast(`Importado: ${Object.keys(d.courses).length} cursos`, 'ok');
